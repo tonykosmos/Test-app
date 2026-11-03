@@ -1,0 +1,311 @@
+openapi: 3.0.3
+info:
+  title: Visited Places API
+  version: 0.1.0
+  description: >
+    Places for the single demo traveler. The server chooses the traveler.
+    Clients do not send a traveler id. Search calls Mapbox through this API
+    and returns only the fields defined here.
+servers:
+  - url: /api
+paths:
+  /places:
+    get:
+      summary: List the demo traveler's places
+      operationId: listPlaces
+      responses:
+        "200":
+          description: Places, most recently visited first. Undated places last.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VisitedPlace"
+    post:
+      summary: Create a place
+      operationId: createPlace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaceWrite"
+      responses:
+        "201":
+          description: Created place
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitedPlace"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /places/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PlaceId"
+    get:
+      summary: Get one place
+      operationId: getPlace
+      responses:
+        "200":
+          description: The place
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitedPlace"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Replace the editable fields of a place
+      operationId: updatePlace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaceWrite"
+      responses:
+        "200":
+          description: Updated place
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitedPlace"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Delete a place
+      operationId: deletePlace
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /place-search/suggest:
+    get:
+      summary: Suggest places for text the traveler is typing
+      operationId: suggestPlaces
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 256
+        - $ref: "#/components/parameters/SessionToken"
+      responses:
+        "200":
+          description: Suggestions. Empty when nothing matches. Coordinates are not included.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlaceSuggestion"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "502":
+          $ref: "#/components/responses/SearchUnavailable"
+  /place-search/retrieve:
+    get:
+      summary: Resolve a suggestion to coordinates and location names
+      operationId: retrievePlace
+      parameters:
+        - name: mapboxId
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - $ref: "#/components/parameters/SessionToken"
+      responses:
+        "200":
+          description: The selected place
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolvedPlace"
+        "404":
+          description: The suggestion id is unknown or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          $ref: "#/components/responses/SearchUnavailable"
+  /place-search/reverse:
+    get:
+      summary: Resolve a map click to location names
+      operationId: reverseGeocode
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            minimum: -90
+            maximum: 90
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+      responses:
+        "200":
+          description: A known location, or null when the point has no name
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ResolvedPlace"
+                  - type: "null"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "502":
+          $ref: "#/components/responses/SearchUnavailable"
+components:
+  parameters:
+    PlaceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SessionToken:
+      name: sessionToken
+      in: query
+      required: true
+      description: UUIDv4 minted by the client for one suggest-and-retrieve sequence.
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: No place with that id belongs to the demo traveler
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    SearchUnavailable:
+      description: Mapbox could not be reached or returned an error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    DatePrecision:
+      type: string
+      enum: [day, month, year]
+    PlaceWrite:
+      type: object
+      required: [title, latitude, longitude]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+          nullable: true
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        placeName:
+          type: string
+          maxLength: 200
+          nullable: true
+        city:
+          type: string
+          maxLength: 200
+          nullable: true
+        country:
+          type: string
+          maxLength: 200
+          nullable: true
+        visitedOn:
+          type: string
+          format: date
+          nullable: true
+          description: First day of the period when precision is month or year.
+        visitedOnPrecision:
+          allOf:
+            - $ref: "#/components/schemas/DatePrecision"
+          nullable: true
+    VisitedPlace:
+      allOf:
+        - $ref: "#/components/schemas/PlaceWrite"
+        - type: object
+          required: [id, createdAt, updatedAt]
+          properties:
+            id:
+              type: string
+              format: uuid
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+    PlaceSuggestion:
+      type: object
+      required: [mapboxId, name]
+      properties:
+        mapboxId:
+          type: string
+        name:
+          type: string
+        placeFormatted:
+          type: string
+          nullable: true
+          description: Secondary line, such as city and country, for the dropdown.
+    ResolvedPlace:
+      type: object
+      required: [name, latitude, longitude]
+      properties:
+        mapboxId:
+          type: string
+          nullable: true
+        name:
+          type: string
+        city:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        latitude:
+          type: number
+        longitude:
+          type: number
+    Error:
+      type: object
+      required: [statusCode, message]
+      properties:
+        statusCode:
+          type: integer
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        error:
+          type: string

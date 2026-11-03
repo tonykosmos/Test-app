@@ -32,6 +32,7 @@
 ## Notes
 
 - Iteration 1: one open item about user accounts.
-- Iteration 2: resolved. No accounts in this version; one built-in demo traveler owns all places (FR-020), and ownership is still recorded so accounts can be added later (FR-021). All items pass.
-- File formats and size limits in FR-010 are user-facing constraints, not implementation choices.
-- Out-of-scope items (sharing, wishlist, trip links, statistics, photo location metadata, Telegram, PDF export) are listed in Assumptions so they can become separate specs.
+- Iteration 2: resolved. No accounts in this version; one built-in demo traveler owns all places (FR-015), and ownership is still recorded so accounts can be added later (FR-016).
+- Iteration 3: photos removed from this feature and listed as a later feature in Assumptions. Stories and requirements renumbered. All items pass.
+- Out-of-scope items (photos, sharing, wishlist, trip links, statistics, Telegram, PDF export) are listed in Assumptions so they can become separate specs.
+- The map service is intentionally unnamed here. Mapbox is the chosen service for the implementation plan.

@@ -1,50 +1,114 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Version change: unratified template → 1.0.0
+- Modified principles:
+  - [PRINCIPLE_1_NAME] → I. Spec Before Code
+  - [PRINCIPLE_2_NAME] → II. Vertical Slices
+  - [PRINCIPLE_3_NAME] → III. Tested User Stories
+  - [PRINCIPLE_4_NAME] → IV. Explicit Schema Changes
+  - [PRINCIPLE_5_NAME] → V. Simplicity
+- Added sections:
+  - Technology Stack
+  - Delivery Workflow
+- Removed sections: none (placeholder headings were replaced in place)
+- Follow-up TODOs: none
+-->
+
+# Test App Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Spec Before Code
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Every product feature MUST start as a specification under `specs/` and MUST
+pass its requirements checklist before planning or implementation. Code MUST
+NOT add behavior that the current feature spec does not require. Items listed
+as out of scope MUST stay out of scope until they have their own spec.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+Rationale: The product is specified one feature at a time. Building ahead of
+the spec adds unused surface area and contradicts the agreed MVP.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Vertical Slices
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+A feature MUST be delivered as independently testable user stories, in
+priority order. The highest-priority story MUST work end to end, from stored
+data through the interface, before later stories are started. A story MUST be
+demonstrable on its own.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Rationale: An MVP that sketches every story but finishes none of them cannot
+be shown or corrected early.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. Tested User Stories
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Each user story MUST have automated tests that cover its acceptance scenarios
+before that story is considered done. A change that breaks an existing
+acceptance scenario MUST NOT be merged.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Rationale: Stories are the unit of delivery. Tests lock the behavior the spec
+already described.
+
+### IV. Explicit Schema Changes
+
+Database schema changes MUST be committed TypeORM migrations. `synchronize`
+MUST remain disabled. Types shared by the frontend and the backend MUST live
+in `packages/shared` and MUST NOT be copied into either app.
+
+Rationale: Automatic schema sync can drop columns. One shared contract keeps
+both apps aligned.
+
+### V. Simplicity
+
+The project MUST prefer the smallest design that satisfies the current spec.
+New libraries, services, and abstractions MUST be justified by a requirement
+in that spec. Placeholder accounts, providers, or features MUST NOT be built
+for later work inside the current feature.
+
+Rationale: Accounts, the AI provider, and later travel features are
+intentionally deferred. Anticipating them inside the current feature widens
+the MVP.
+
+## Technology Stack
+
+The repository is one npm workspace. The frontend and the backend MUST start
+as separate processes.
+
+- Frontend: Vite, React, TypeScript, Tailwind CSS, ESLint, and Prettier.
+- Backend: NestJS, TypeORM, and PostgreSQL. Request validation and OpenAPI
+  docs are added when the feature spec introduces an API.
+- Database: PostgreSQL, run locally with Docker Compose. Schema changes
+  follow Principle IV.
+- Shared code: `packages/shared`.
+- AI: any provider MUST sit behind a single project interface and MUST be
+  selectable without rewriting feature code. No provider is chosen until a
+  spec requires generation.
+
+Deviations MUST be recorded as a constitution amendment or called out in the
+feature plan with a reason.
+
+## Delivery Workflow
+
+Work on a feature MUST follow this order:
+
+1. Specification in `specs/NNN-short-name/spec.md`, with its quality
+   checklist passing and no unresolved clarifications.
+2. Implementation plan, checked against this constitution.
+3. Tasks ordered by user-story priority.
+4. Implementation of one story at a time, with that story's tests.
+
+The frontend and the backend MUST stay in this repository. Feature code MUST
+be grouped by feature, not in one global layer that mixes unrelated features.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes informal preferences when they conflict. Plans
+and pull requests MUST be checked against these principles.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Amendments MUST update this file, bump the version below using semantic
+versioning, and set the last-amended date. A MAJOR bump removes or redefines
+a principle. A MINOR bump adds a principle or section. A PATCH bump clarifies
+wording only.
+
+Complexity beyond the current spec MUST be justified in the feature plan. How
+to install and run the project lives in the repository README.
+
+**Version**: 1.0.0 | **Ratified**: 2026-11-02 | **Last Amended**: 2026-11-02
